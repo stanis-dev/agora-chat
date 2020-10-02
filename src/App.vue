@@ -1,11 +1,25 @@
 <template>
-  <div id="app"></div>
+  <div id="app">
+    <Login v-if="!user.name" />
+    <Chat v-else />
+  </div>
 </template>
 
 <script>
+import Login from './components/Login';
+import Chat from './components/Chat';
+
 export default {
   name: 'App',
-  components: {}
+  components: {
+    Login,
+    Chat
+  },
+  computed: {
+    user() {
+      return this.$store.state.user;
+    }
+  }
 };
 </script>
 
@@ -16,6 +30,6 @@ export default {
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
   color: #2c3e50;
-  margin-top: 60px;
+  padding-top: 100px;
 }
 </style>
