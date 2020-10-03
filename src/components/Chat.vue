@@ -152,6 +152,10 @@ export default {
         );
         // TODO: Ask user if to accept and after 15sec cancel it anyway
         this.$store.dispatch('setRemoteInvitation', remoteInvitation);
+        this.$store.dispatch('updateConfig', {
+          channelName: remoteInvitation.content,
+          host: false
+        });
         this.remoteInvitationEvents();
       });
 

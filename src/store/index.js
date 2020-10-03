@@ -13,7 +13,8 @@ export default new Vuex.Store({
     config: {
       token: process.env.VUE_APP_AGORA_APP_TOKEN,
       channelName: '',
-      appID: process.env.VUE_APP_AGORA_APP_ID
+      appID: process.env.VUE_APP_AGORA_APP_ID,
+      host: true
     },
     call: {
       active: false,
@@ -25,6 +26,9 @@ export default new Vuex.Store({
     },
     outCall: {
       localInvitation: null
+    },
+    onHoldCall: {
+      remoteInvitation: null
     }
   },
   mutations: {
