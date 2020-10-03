@@ -19,7 +19,12 @@
       <br />
       <Search v-if="channel" :channel="channel" :client="client" />
       <br />
-      <Call v-if="$store.state.call.active" />
+      <Call
+        v-if="
+          $store.state.inCall.remoteInvitation ||
+            $store.state.outCall.localInvitation
+        "
+      />
     </p>
   </div>
 </template>
@@ -38,7 +43,6 @@ export default {
   data() {
     return {
       isConnected: false,
-      client: '',
       connectionStatus: '',
       channel: null
     };
@@ -46,26 +50,20 @@ export default {
   computed: {
     user() {
       return this.$store.state.user;
+    },
+    client() {
+      return this.$store.state.RTMClient;
+    },
+    remoteInvitation() {
+      return this.$store.state.inCall.remoteInvitation;
     }
   },
   created() {
-    // Options for joining a channel
-    /* const option = {
-      channel: 'Cupra',
-    }; */
-
-    const options = {
-      appID: 'd4e6ed0d6a8b450cb801d894e633f198',
-      uid: this.user.id,
-      token:
-        '006a1d55dab3a3a41e3bb329792a0cc6cbfIABVJ2NctG6Yubw/VRzPHL03RQg/H9ZXf6R/tmkPsdvQH8Cn3fYAAAAAEAA8TtCoPXJ3XwEAAQA8cndf'
-    };
-
-    const client = AgoraRTM.createInstance(options.appID);
-    this.client = client;
+    const client = AgoraRTM.createInstance(this.$store.state.config.appID);
+    this.$store.dispatch('updateRTMClient', client);
 
     // A listener for connection
-    client.on('ConnectionStateChanged', (newState, reason) => {
+    this.client.on('ConnectionStateChanged', (newState, reason) => {
       console.log(
         'on connection state changed to ' + newState + ' reason: ' + reason
       );
@@ -73,7 +71,7 @@ export default {
     });
 
     //login
-    client
+    this.client
       .login({
         token: null,
         uid: this.user.id
@@ -88,41 +86,10 @@ export default {
         this.isConnected = false;
       });
 
-    /* Outgoing Call Listeners */
-    client.on('LocalInvitationReceivedByPeer', () => {
-      this.$store.dispatch('setCallStatus', 'Received, Stand by...');
-    });
-
-    client.on('LocalInvitationAccepted', () => {
-      console.log('Your call has been accepted!');
-    });
-
-    client.on('LocalInvitationRefused', () => {
-      console.log('Your call has been rejected!');
-    });
-
-    client.on('LocalInvitationCanceled', () => {
-      console.log('Your call has been canceled by you!');
-    });
+    this.localInvitationListeners();
+    this.remoteInvitationListeners();
 
     /* Incoming Call Listeners */
-    client.on('RemoteInvitationReceived', remoteInvitation => {
-      console.log('Incoming call detected');
-      console.log(remoteInvitation);
-    });
-
-    client.on('RemoteInvitationFailure', remoteInvitation => {
-      console.log('Incoming call failed');
-      console.log(remoteInvitation);
-    });
-    client.on('RemoteInvitationAccepted', remoteInvitation => {
-      console.log('Incoming call accepted');
-      console.log(remoteInvitation);
-    });
-    client.on('RemoteInvitationCanceled', remoteInvitation => {
-      console.log('Incoming call rejected');
-      console.log(remoteInvitation);
-    });
   },
   methods: {
     logout() {
@@ -137,6 +104,69 @@ export default {
       } catch (error) {
         console.log('Error joining the channel');
       }
+    },
+    remoteInvitationEvents() {
+      //The caller has cancelled the call invitation
+      this.remoteInvitation.on('RemoteInvitationCanceled', () => {
+        console.log('The call invitation was cancelled');
+      });
+
+      //Accepted call invitation successfully
+      this.remoteInvitation.on('RemoteInvitationAccepted', () => {
+        this.$store.dispatch('setCallStatus', true);
+        console.log('Peers receive calls');
+      });
+
+      //Call invitation rejected successfully
+      this.remoteInvitation.on('RemoteInvitationRefused', () => {
+        console.log('The call invitation has been declined');
+      });
+
+      //Call invitation process failed
+      this.remoteInvitation.on('RemoteInvitationFailure', () => {
+        console.log('Peer call process failed');
+      });
+    },
+    localInvitationListeners() {
+      /* Outgoing Call Listeners */
+      this.client.on('LocalInvitationReceivedByPeer', () => {
+        console.log('Your call has been received');
+      });
+
+      this.client.on('LocalInvitationAccepted', () => {
+        console.log('Your call has been accepted!');
+      });
+
+      this.client.on('LocalInvitationRefused', () => {
+        console.log('Your call has been rejected!');
+      });
+
+      this.client.on('LocalInvitationCanceled', () => {
+        console.log('Your call has been canceled by you!');
+      });
+    },
+    remoteInvitationListeners() {
+      this.client.on('RemoteInvitationReceived', remoteInvitation => {
+        console.log(
+          'Incoming call detected: ' + JSON.stringify(remoteInvitation)
+        );
+        // TODO: Ask user if to accept and after 15sec cancel it anyway
+        this.$store.dispatch('setRemoteInvitation', remoteInvitation);
+        this.remoteInvitationEvents();
+      });
+
+      this.client.on('RemoteInvitationFailure', () => {
+        console.log('Incoming call failed');
+        console.log(remoteInvitation);
+      });
+      this.client.on('RemoteInvitationAccepted', () => {
+        console.log('Incoming call accepted');
+        console.log(remoteInvitation);
+      });
+      this.client.on('RemoteInvitationCanceled', () => {
+        console.log('Incoming call rejected');
+        console.log(remoteInvitation);
+      });
     }
   }
 };

@@ -23,8 +23,7 @@ export default {
   data() {
     return {
       userSearchInput: '',
-      rawOnlineUsersList: [],
-      invitation: null
+      rawOnlineUsersList: []
     };
   },
   computed: {
@@ -32,6 +31,9 @@ export default {
       return this.rawOnlineUsersList.filter(
         user => user !== this.$store.state.user.name
       );
+    },
+    localInvitation() {
+      return this.$store.state.outCall.localInvitation;
     }
   },
   methods: {
@@ -39,19 +41,59 @@ export default {
       this.rawOnlineUsersList = await this.$props.channel.getMembers();
     },
     async sendCallInvitation(userId) {
+      //TODO: clean this
       try {
-        this.invitation = await this.$props.client.createLocalInvitation(
+        /*  Create invitation */
+        this.invitation = await this.$store.state.RTMClient.createLocalInvitation(
           userId
         );
 
+        /* Set the listeners on the events of this invitation */
+        //Local monitoring and inviting peers
+        this.invitation.on('LocalInvitationReceivedByPeer', () => {
+          console.log('Peers receive calls');
+        });
+
+        //Cancel call invitation
+        this.invitation.on('LocalInvitationCanceled', () => {
+          console.log('Cancel call invitation');
+        });
+
+        //Called accepted call invitation
+        this.invitation.on('LocalInvitationAccepted', () => {
+          this.$store.dispatch('setCallStatus', true);
+          console.log('Peers accept invitations to call');
+        });
+
+        //Called down
+        this.invitation.on('LocalInvitationRefused', () => {
+          console.log('Peers refuse to call invitations');
+        });
+
+        //Local call failed
+        this.invitation.on('LocalInvitationFailure', () => {
+          console.log('Call process failed');
+        });
+
+        const channel = this.getRoomCode(this.$store.state.user.id, userId);
+        this.invitation.content = channel;
+
+        //Send call invitation locally
         this.invitation.send();
-        this.$store.dispatch('setStateCallStarted', {
+
+        /* this.$store.dispatch('setStateCallStarted', {
           state: 'Initiated',
           receiverId: userId
-        });
+        }); */
+        this.$store.dispatch('setLocalInvitation', this.invitation);
+
+        this.$store.dispatch('updateConfig', { channelName: channel });
       } catch (error) {
         console.log(error);
       }
+    },
+    getRoomCode(callerId, calleeId) {
+      return callerId + calleeId;
     }
   }
 };
