@@ -4,13 +4,16 @@
   "private": true,
   "scripts": {
     "serve": "vue-cli-service serve",
-    "build": "vue-cli-service build"
+    "build": "vue-cli-service build",
+    "start": "nodemon server.js"
   },
   "dependencies": {
     "agora-rtc-sdk": "^3.2.1",
     "agora-rtm-sdk": "^1.4.0",
     "core-js": "^3.6.5",
+    "express": "^4.17.1",
     "json-server": "^0.16.2",
+    "path": "^0.12.7",
     "postcss": "^8.1.1",
     "tailwindcss": "^1.8.10",
     "vue": "^2.6.11",
