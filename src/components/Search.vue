@@ -40,57 +40,76 @@ export default {
     async getConnectedUsers() {
       this.rawOnlineUsersList = await this.$props.channel.getMembers();
     },
-    async sendCallInvitation(userId) {
+    async sendCallInvitation(calleeId) {
       //TODO: clean this
       try {
-        /*  Create invitation */
+        // 1. Config the Invitation
         this.invitation = await this.$store.state.RTMClient.createLocalInvitation(
-          userId
+          calleeId
         );
-
-        /* Set the listeners on the events of this invitation */
-        //Local monitoring and inviting peers
-        this.invitation.on('LocalInvitationReceivedByPeer', () => {
-          console.log('Peers receive calls');
-        });
-
-        //Cancel call invitation
-        this.invitation.on('LocalInvitationCanceled', () => {
-          console.log('Cancel call invitation');
-        });
-
-        //Called accepted call invitation
-        this.invitation.on('LocalInvitationAccepted', () => {
-          this.$store.dispatch('setCallStatus', true);
-          console.log('Peers accept invitations to call');
-        });
-
-        //Called down
-        this.invitation.on('LocalInvitationRefused', () => {
-          console.log('Peers refuse to call invitations');
-        });
-
-        //Local call failed
-        this.invitation.on('LocalInvitationFailure', () => {
-          console.log('Call process failed');
-        });
-
-        const channel = this.getRoomCode(this.$store.state.user.id, userId);
+        // Attach a roomName to joing if accepted
+        const channel = this.getRoomCode(this.$store.state.user.id, calleeId);
         this.invitation.content = channel;
 
-        //Send call invitation locally
-        this.invitation.send();
+        this.localInvitationListeners(calleeId);
 
-        /* this.$store.dispatch('setStateCallStarted', {
-          state: 'Initiated',
-          receiverId: userId
-        }); */
-        this.$store.dispatch('setLocalInvitation', this.invitation);
+        // 2. Send the Invitation
+        this.invitation.send();
+        this.$store.commit('updateOutgoingCall', {
+          received: true,
+          receiverID: calleeId,
+          localInvitation: this.invitation
+        });
 
         this.$store.dispatch('updateConfig', { channelName: channel });
       } catch (error) {
         console.log(error);
       }
+    },
+    localInvitationListeners(calleeId) {
+      this.invitation.on('LocalInvitationReceivedByPeer', () => {
+        console.log('Peers receive calls');
+      });
+
+      //Cancel call invitation
+      this.invitation.on('LocalInvitationCanceled', () => {
+        console.log('Cancel call invitation');
+        this.$store.commit('updateOutgoingCall', {
+          received: false,
+          receiverID: ''
+        });
+      });
+
+      //Called accepted call invitation
+      this.invitation.on('LocalInvitationAccepted', () => {
+        console.log('Peers accept invitations to call');
+        this.$store.commit('updateOutgoingCall', {
+          received: false,
+          receiverID: ''
+        });
+        this.$store.commit('updateOngoingCall', {
+          active: true,
+          peer: calleeId,
+          status: 'accepted'
+        });
+      });
+
+      //Called down
+      this.invitation.on('LocalInvitationRefused', () => {
+        console.log('Peers refuse to call invitations');
+        this.$store.commit('updateOutgoingCall', {
+          received: false,
+          receiverID: ''
+        });
+      });
+
+      //Local call failed
+      this.invitation.on('LocalInvitationFailure', () => {
+        this.$store.commit('updateOutgoingCall', {
+          received: false,
+          receiverID: ''
+        });
+      });
     },
     getRoomCode(callerId, calleeId) {
       return callerId + calleeId;

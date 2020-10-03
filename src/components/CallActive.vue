@@ -1,8 +1,9 @@
 <template>
   <div class="call-on">
-    <button>Mute</button>
-    <button>End</button>
+    <button @click="mute">Mute</button>
+    <button @click="leaveCall">End</button>
     <audio id="audio"></audio>
+    <h2 v-if="callStatus">{{ callStatus }}</h2>
   </div>
 </template>
 
@@ -15,7 +16,9 @@ export default {
       RTCClient: null,
       localStream: null,
       stream: null,
-      config: null
+      config: null,
+      callStatus: '',
+      muted: false
     };
   },
   mounted() {
@@ -98,8 +101,60 @@ export default {
 
         // Play the remote stream.
         remoteStream.play('audio');
+        this.callStatus = 'IN CALL';
         console.log('stream-subscribed remote-uid: ', id);
       });
+
+      this.RTCClient.on('stream-removed', function(event) {
+        console.log('stream-removed remote-uid: ', id);
+        const remoteStream = event.stream;
+        const id = remoteStream.getId();
+        // Stop playing the remote stream.
+        remoteStream.stop();
+        remoteStream.close();
+        // Remove the view of the remote stream.
+      });
+
+      this.RTCClient.on('peer-leave', event => {
+        console.log('PEER LEFT: ' + event);
+        const remoteStream = event.stream;
+        const id = remoteStream.getId();
+        // Stop playing the remote stream.
+        remoteStream.stop();
+        remoteStream.close();
+        this.leaveCall();
+        // Remove the view of the remote stream.
+      });
+    },
+    mute() {
+      this.muted = !this.muted;
+
+      this.muted
+        ? this.localStream.muteAudio()
+        : this.localStream.unmuteAudio();
+    },
+    leaveCall() {
+      this.RTCClient.leave(
+        () => {
+          console.log('attempting to leave the call');
+
+          // Here You have to close all streams. Incoming and Outgoing
+          this.RTCClient.unpublish(this.localStream);
+          this.localStream.stop();
+
+          this.localStream.close();
+
+          console.log('Call leave success');
+          this.$store.commit('updateOngoingCall', {
+            active: false,
+            peer: '',
+            status: ''
+          });
+        },
+        error => {
+          console.log('leaveCall failed: ' + error);
+        }
+      );
     }
   }
 };

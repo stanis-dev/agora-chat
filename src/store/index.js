@@ -16,19 +16,20 @@ export default new Vuex.Store({
       appID: process.env.VUE_APP_AGORA_APP_ID,
       host: true
     },
-    call: {
+    ongoingCall: {
       active: false,
-      state: '',
-      receiverId: ''
+      peer: '',
+      status: ''
     },
-    inCall: {
+    incomingCall: {
+      received: false,
+      callerID: '',
       remoteInvitation: null
     },
-    outCall: {
+    outgoingCall: {
+      received: false,
+      receiverID: '',
       localInvitation: null
-    },
-    onHoldCall: {
-      remoteInvitation: null
     }
   },
   mutations: {
@@ -47,14 +48,20 @@ export default new Vuex.Store({
     updateRemoteInvitation(state, payload) {
       state.inCall.remoteInvitation = payload;
     },
-    updateLocalInvitation(state, payload) {
-      state.outCall.localInvitation = payload;
-    },
     updateConfig(state, payload) {
       state.config = { ...state.config, ...payload };
     },
     updateRTMClient(state, payload) {
       state.RTMClient = payload;
+    },
+    updateOutgoingCall(state, payload) {
+      state.outgoingCall = payload;
+    },
+    updateIncomingCall(state, payload) {
+      state.incomingCall = payload;
+    },
+    updateOngoingCall(state, payload) {
+      state.ongoingCall = payload;
     }
   },
   actions: {
@@ -75,9 +82,6 @@ export default new Vuex.Store({
     },
     setRemoteInvitation({ commit }, payload) {
       commit('updateRemoteInvitation', payload);
-    },
-    setLocalInvitation({ commit }, payload) {
-      commit('updateLocalInvitation', payload);
     },
     updateConfig({ commit }, payload) {
       commit('updateConfig', payload);
