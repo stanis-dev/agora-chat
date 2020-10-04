@@ -2,11 +2,16 @@
   <div class="messenger">
     Messenger
     <div class="message-container">
-      <div class="message incoming">Hello there!</div>
-      <div class="message outgoing">What's up?</div>
+      <p
+        v-for="message in messages"
+        :class="message.userId === peerID ? 'outgoing' : 'incoming'"
+        class="message"
+      >
+        {{ message.text }}
+      </p>
     </div>
     <form @submit.prevent="sendMessage">
-      <input type="text" />
+      <input type="text" v-model="textMessageInput" />
       <button>Send</button>
     </form>
   </div>
@@ -16,15 +21,50 @@
 export default {
   data() {
     return {
-      messages: [
-        { message: 'Hello there!', id: 1 },
-        { message: 'Whats up?', id: 2 }
-      ]
+      textMessageInput: '',
+      messages: []
     };
   },
+  computed: {
+    RTMClient() {
+      return this.$store.state.RTMClient;
+    },
+    peerID() {
+      return this.$store.state.ongoingCall.peer;
+    }
+  },
+  mounted() {
+    this.RTMClient.on('MessageFromPeer', ({ text }, peerId) => {
+      const message = { text, userId: peerId };
+
+      this.messages.push(message);
+    });
+  },
   methods: {
-    sendMessage(message) {
-      console.log('message sent');
+    sendMessage() {
+      const text = this.textMessageInput;
+      const peerID = this.peerID;
+      if (text.length <= 0) {
+        return;
+      }
+
+      this.RTMClient.sendMessageToPeer({ text }, peerID)
+        .then(sendResult => {
+          if (sendResult.hasPeerReceived) {
+            const message = { text, userId: this.$store.state.user.id };
+
+            this.messages.push(message);
+            console.log('message sent');
+            this.textMessageInput = '';
+          } else {
+            // Server received msg, but peer didn't
+            console.log('User did not receive the message');
+          }
+        })
+        .catch(error => {
+          // Send failed
+          console.log('Sending message failed terribly: ' + error);
+        });
     }
   }
 };
@@ -67,6 +107,7 @@ export default {
 
 input {
   padding-left: 0.5rem;
+  width: 100%;
 }
 
 input:focus {
@@ -76,6 +117,7 @@ input:focus {
 form button {
   position: absolute;
   bottom: 0;
+  right: 0;
   z-index: 2;
   align-self: flex-end;
   background-color: bisque;

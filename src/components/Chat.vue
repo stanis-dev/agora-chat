@@ -26,8 +26,8 @@
         "
       />
     </p>
-    <CallActive v-if="$store.state.ongoingCall.active" />
-    <Messenger />
+    <CallActive v-if="ongoingCallActive" />
+    <Messenger v-if="ongoingCallActive" />
   </div>
 </template>
 
@@ -62,6 +62,9 @@ export default {
     },
     remoteInvitation() {
       return this.$store.state.inCall.remoteInvitation;
+    },
+    ongoingCallActive() {
+      return this.$store.state.ongoingCall.active;
     }
   },
   created() {

@@ -36,6 +36,9 @@ export default {
       return this.$store.state.outCall.localInvitation;
     }
   },
+  mounted() {
+    this.getConnectedUsers();
+  },
   methods: {
     async getConnectedUsers() {
       this.rawOnlineUsersList = await this.$props.channel.getMembers();
@@ -135,7 +138,12 @@ input:focus {
 }
 
 .user-list {
-  margin-top: 10px;
+  margin: 1rem auto;
+  display: flex;
+  justify-content: center;
+}
+
+ul {
 }
 
 li {
@@ -143,5 +151,7 @@ li {
   font-size: 1.2rem;
   text-transform: uppercase;
   border-bottom: 1px solid black;
+  max-width: 200px;
+  text-align: center;
 }
 </style>

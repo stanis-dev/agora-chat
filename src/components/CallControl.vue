@@ -2,7 +2,7 @@
   <div>
     <p>Call Component</p>
     <div class="call-in" v-if="$store.state.incomingCall.received">
-      <button @click="acceptIncomingCall">Accept</button>
+      <button @click="acceptIncomingCall">Accept</button> |
       <button @click="rejectIncomingCall">Decline</button>
     </div>
     <div class="call-out" v-if="$store.state.outgoingCall.received">
