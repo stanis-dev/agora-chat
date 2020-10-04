@@ -22,6 +22,10 @@ export default {
     };
   },
   mounted() {
+    //0. Listen for the event from CallControl in case we need to end ongoingCall to accept a new incomingCall
+    this.$root.$on('endOngoingCall', () => {
+      this.leaveCall();
+    });
     // 1. Create a RTCClient
     this.RTCClient = AgoraRTC.createClient({ codec: 'h264', mode: 'rtc' });
     // Config for the call

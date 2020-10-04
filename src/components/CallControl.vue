@@ -25,6 +25,10 @@ export default {
   },
   methods: {
     acceptIncomingCall() {
+      // Is there any active call going on? If so, end it.
+      this.$store.state.ongoingCall.active &&
+        this.$root.$emit('endOngoingCall');
+
       console.log('trying to accept');
       this.remoteInvitation.accept();
     },

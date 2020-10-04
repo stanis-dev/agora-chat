@@ -27,6 +27,7 @@
       />
     </p>
     <CallActive v-if="$store.state.ongoingCall.active" />
+    <Messenger />
   </div>
 </template>
 
@@ -34,6 +35,7 @@
 import Search from './Search';
 import CallControl from './CallControl';
 import CallActive from './CallActive';
+import Messenger from './Messenger';
 
 import AgoraRTM from 'agora-rtm-sdk';
 
@@ -41,7 +43,8 @@ export default {
   components: {
     Search,
     CallControl,
-    CallActive
+    CallActive,
+    Messenger
   },
   data() {
     return {
