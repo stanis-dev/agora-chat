@@ -41,7 +41,14 @@ export default {
   },
   methods: {
     async getConnectedUsers() {
-      this.rawOnlineUsersList = await this.$props.channel.getMembers();
+      if (this.userSearchInput.length <= 3) {
+        this.rawOnlineUsersList = await this.$props.channel.getMembers();
+      } else {
+        this.rawOnlineUsersList = await this.$props.channel.getMembers();
+        this.rawOnlineUsersList = this.rawOnlineUsersList.filter(user => {
+          return user.includes(this.userSearchInput) && user;
+        });
+      }
     },
     async sendCallInvitation(calleeId) {
       //TODO: clean this
